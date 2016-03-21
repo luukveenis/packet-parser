@@ -47,12 +47,22 @@ int process_file(pcap_t *handle, struct result *res){
   struct pcap_pkthdr header;
   const u_char *packet;
   int pktcounter = 0;
+  int start = 0; /* Indicate when traceroute started */
 
   while ((packet = pcap_next(handle, &header))){
     /* printf("Processing packet %d...\n", ++pktcounter); */
     struct packet pkt = initialize_packet(++pktcounter);
     if (process_packet(&pkt, packet, header.ts, header.caplen)) {
-      res->pkts[res->pkt_c++] = pkt; /* Store the packet internally */
+      if (start) {
+        res->pkts[res->pkt_c++] = pkt; /* Store the packet internally */
+      } else {
+        if (pkt.ttl == 1) {
+          start = 1;
+          res->pkts[res->pkt_c++] = pkt; /* Store the packet internally */
+          strcpy(res->ip_src, pkt.ip_src);
+          strcpy(res->ip_dst, pkt.ip_dst);
+        }
+      }
     }
   }
 
