@@ -27,4 +27,5 @@ struct result {
 
 
 struct packet initialize_packet(int);
+void print_results(struct result);
 #endif

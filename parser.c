@@ -33,18 +33,7 @@ int main(int argc, char **argv) {
   }
 
   process_file(handle, &res);
-
-  int i;
-  for (i = 0; i < res.pkt_c; i++){
-    struct packet p = res.pkts[i];
-    printf("Original id: %d\n", p.id);
-    printf("Packet #: %d\n", i);
-    printf("Source IP: %s\n", p.ip_src);
-    printf("Destination IP: %s\n", p.ip_dst);
-    char *type = p.t_udp ? "UDP" : "ICMP";
-    printf("Type of packet: %s\n\n", type);
-    printf("TTL: %d\n", p.ttl);
-  }
+  print_results(res);
 
   return 0;
 }
