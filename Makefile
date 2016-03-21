@@ -3,8 +3,8 @@
 
 all: parser
 
-parser: parser.o
-	gcc -g -o parser parser.o -lpcap
+parser: parser.o util.o
+	gcc -g -o parser parser.o util.o -lpcap
 
 clean:
 	rm *.o parser

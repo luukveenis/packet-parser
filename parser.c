@@ -1,16 +1,22 @@
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
-/* #include <arpa/inet.h> */
+#include <netinet/udp.h>
+#include <arpa/inet.h>
 #include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int process_file(pcap_t*);
-void process_packet(const u_char*, struct timeval, unsigned int);
+/* My includes */
+#include "util.h"
+
+int process_file(pcap_t*, struct result*);
+int process_packet(struct packet*, const u_char*, struct timeval, unsigned int);
 
 /* ---------------- Main ----------------*/
 int main(int argc, char **argv) {
   char err[PCAP_ERRBUF_SIZE];
+  struct result res;
   pcap_t *handle;
 
   /* We expect exactly one command line argument, the .cap file name */
@@ -26,7 +32,19 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  process_file(handle);
+  process_file(handle, &res);
+
+  int i;
+  for (i = 0; i < res.pkt_c; i++){
+    struct packet p = res.pkts[i];
+    printf("Original id: %d\n", p.id);
+    printf("Packet #: %d\n", i);
+    printf("Source IP: %s\n", p.ip_src);
+    printf("Destination IP: %s\n", p.ip_dst);
+    char *type = p.t_udp ? "UDP" : "ICMP";
+    printf("Type of packet: %s\n\n", type);
+    printf("TTL: %d\n", p.ttl);
+  }
 
   return 0;
 }
@@ -36,27 +54,32 @@ int main(int argc, char **argv) {
  *  -  0 for success
  *  - -1 for failure
  */
-int process_file(pcap_t *handle){
+int process_file(pcap_t *handle, struct result *res){
   struct pcap_pkthdr header;
   const u_char *packet;
   int pktcounter = 0;
 
   while ((packet = pcap_next(handle, &header))){
-    printf("Processing packet %d...\n", ++pktcounter);
-    process_packet(packet, header.ts, header.caplen);
+    /* printf("Processing packet %d...\n", ++pktcounter); */
+    struct packet pkt = initialize_packet(++pktcounter);
+    if (process_packet(&pkt, packet, header.ts, header.caplen)) {
+      res->pkts[res->pkt_c++] = pkt; /* Store the packet internally */
+    }
   }
 
   return 0;
 }
 
-void process_packet(const u_char *packet, struct timeval ts, unsigned int caplen) {
+int process_packet(struct packet* pkt,
+    const u_char *packet, struct timeval ts, unsigned int caplen) {
   unsigned int iphdrlen;
   struct ip *ip;
+  struct udphdr* udp;
 
   /* Didn't capture the full ethernet header */
   if (caplen < sizeof(struct ether_header)) {
     printf("Failed to capture full packet\n");
-    exit(EXIT_FAILURE);
+    return 0;
   }
 
   /* Skip over the Ethernet header. */
@@ -66,7 +89,7 @@ void process_packet(const u_char *packet, struct timeval ts, unsigned int caplen
   /* Didn't capture a full IP header */
   if (caplen < sizeof(struct ip)) {
     printf("Failed to capture full packet\n");
-    exit(EXIT_FAILURE);
+    return 0;
   }
 
   ip = (struct ip*) packet;
@@ -75,16 +98,39 @@ void process_packet(const u_char *packet, struct timeval ts, unsigned int caplen
   /* Didn't capture the full IP header with options */
   if (caplen < iphdrlen) {
     printf("Failed to capture full packet\n");
-    exit(EXIT_FAILURE);
+    return 0;
   }
 
+  /* Extract info from IP header */
+  strcpy(pkt->ip_src, inet_ntoa(ip->ip_src));
+  strcpy(pkt->ip_dst, inet_ntoa(ip->ip_dst));
+  pkt->ttl = ip->ip_ttl;
+
+  /* UDP packet */
   if (ip->ip_p == IPPROTO_UDP) {
-    printf("Protocol: UDP\n\n");
+    /* printf("Protocol: UDP\n\n"); */
+    packet += iphdrlen;
+    caplen -= iphdrlen;
+
+    /* Check if we captured full UDP packet */
+    if (caplen < sizeof(struct udphdr)) {
+      printf("Failed to capture full packet\n");
+      return 0;
+    }
+
+    udp = (struct udphdr*) packet;
+    if (ntohs(udp->uh_dport) == 1900) {
+      return 0;
+    }
+    pkt->t_udp = 1;
   } else if (ip->ip_p == IPPROTO_TCP) {
-    printf("Protocol: TCP\n\n");
+    /* printf("Protocol: TCP\n\n"); */
+    return 0;
   } else if (ip->ip_p == IPPROTO_ICMP) {
-    printf("Protocol: ICMP\n\n");
+    pkt->t_icmp = 1;
   } else {
-    printf("Protocol: %d\n\n", ip->ip_p);
+    /* printf("Protocol: %d\n\n", ip->ip_p); */
+    return 0;
   }
+  return 1;
 }
