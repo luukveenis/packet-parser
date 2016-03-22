@@ -9,11 +9,17 @@
 
 struct packet {
   int id; /* This is the original packet # in the trace file for debugging */
+  u_short ip_id;
+  u_short src_id;
   char ip_src[MAX_STR_LEN]; /* source IP */
   char ip_dst[MAX_STR_LEN]; /* destination IP */
   u_int8_t t_udp:1;
   u_int8_t t_icmp:1;
   u_int8_t ttl;
+  u_int8_t icmp_type;
+  u_int8_t icmp_code;
+};
+
 };
 
 struct result {

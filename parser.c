@@ -1,6 +1,7 @@
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
+#include <linux/icmp.h>
 #include <arpa/inet.h>
 #include <pcap.h>
 #include <stdio.h>
@@ -72,6 +73,7 @@ int process_packet(struct packet* pkt,
   unsigned int iphdrlen;
   struct ip *ip;
   struct udphdr* udp;
+  struct icmphdr* icmp;
 
   /* Didn't capture the full ethernet header */
   if (caplen < sizeof(struct ether_header)) {
@@ -102,11 +104,13 @@ int process_packet(struct packet* pkt,
   strcpy(pkt->ip_src, inet_ntoa(ip->ip_src));
   strcpy(pkt->ip_dst, inet_ntoa(ip->ip_dst));
   pkt->ttl = ip->ip_ttl;
+  pkt->ip_id = ntohs(ip->ip_id);
+
+  packet += iphdrlen;
+  caplen -= iphdrlen;
 
   /* UDP packet */
   if (ip->ip_p == IPPROTO_UDP) {
-    packet += iphdrlen;
-    caplen -= iphdrlen;
 
     /* Check if we captured full UDP packet */
     if (caplen < sizeof(struct udphdr)) {
@@ -126,7 +130,26 @@ int process_packet(struct packet* pkt,
   } else if (ip->ip_p == IPPROTO_TCP) {
     return 0;
   } else if (ip->ip_p == IPPROTO_ICMP) {
+    if (caplen < sizeof(struct icmphdr)) {
+      printf("Failed to capture full ICMP header\n");
+      return 0;
+    }
+
+    icmp = (struct icmphdr*)packet;
     pkt->t_icmp = 1;
+    pkt->icmp_type = icmp->type;
+    pkt->icmp_code = icmp->code;
+
+    packet += 8; /* ICMP header is 8 bytes */
+    caplen -= 8;
+
+    if (caplen <= 0) {
+      printf("Missing data section of ICMP packet\n");
+      return 0;
+    }
+
+    ip = (struct ip*) packet;  /* This is the original IP header */
+    pkt->src_id = ntohs(ip->ip_id);
   } else {
     return 0;
   }
