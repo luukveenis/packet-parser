@@ -115,7 +115,11 @@ int process_packet(struct packet* pkt,
     }
 
     udp = (struct udphdr*) packet;
-    if (ntohs(udp->uh_dport) == 1900) {
+    u_int16_t sport = ntohs(udp->uh_sport);
+    u_int16_t dport = ntohs(udp->uh_dport);
+
+    /* Ignore SSDP and DNS UDP packets */
+    if (dport == 1900 || dport == 53 || sport == 53) {
       return 0;
     }
     pkt->t_udp = 1;
