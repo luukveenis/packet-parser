@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
   }
 
   process_file(handle, &res);
+  find_hops(&res);
   print_results(res);
 
   return 0;

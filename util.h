@@ -20,18 +20,22 @@ struct packet {
   u_int8_t icmp_code;
 };
 
+struct node {
+  char ip[MAX_STR_LEN]; /* IP of this node */
+  int dist; /* Number of hops from source */
 };
 
 struct result {
   char ip_src[MAX_STR_LEN];
   char ip_dst[MAX_STR_LEN]; /* destination ip */
-  char *ip_int[MAX_HOPS];   /* list of intermediate IPs */
-  int intermediate;         /* number of intermediate hosts */
   struct packet pkts[MAX_PACKETS]; /* Internal representation of packets */
   int pkt_c; /* Packet count (how many packets  we have) */
+  struct node hops[MAX_HOPS];
+  int hops_c;         /* number of intermediate hosts */
 };
 
 
 struct packet initialize_packet(int);
 void print_results(struct result);
+void find_hops(struct result*);
 #endif
