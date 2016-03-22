@@ -17,7 +17,7 @@ int process_packet(struct packet*, const u_char*, struct timeval, unsigned int);
 /* ---------------- Main ----------------*/
 int main(int argc, char **argv) {
   char err[PCAP_ERRBUF_SIZE];
-  struct result res;
+  struct result res = { .pkt_c = 0, .hops_c = 0 };
   pcap_t *handle;
 
   /* We expect exactly one command line argument, the .cap file name */
