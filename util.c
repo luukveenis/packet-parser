@@ -16,6 +16,25 @@ struct packet initialize_packet(int id) {
   return pkt;
 }
 
+/* Scans the packets for the ICMP packet containing the response to the
+ * original ping request. The response types might be different depending on
+ * the protocol the host is using for traceroute
+ */
+void find_dest(struct result *res) {
+  int i;
+  struct packet tmp;
+
+  for (i = 0; i < res->pkt_c; i++) {
+    tmp = res->pkts[i];
+    /* There are two options for the message type of the final response:
+     *  - 0 (ping reply) if the request is using ICMP
+     *  - 11 (port unreachable) if the request is using UDP */
+    if (tmp.t_icmp && (tmp.icmp_type == 0 || tmp.icmp_type == 11)) {
+      strcpy(res->ip_dst, tmp.ip_src);
+    }
+  }
+}
+
 void find_hops(struct result *res) {
   int i, match;
   struct packet tmp, original;

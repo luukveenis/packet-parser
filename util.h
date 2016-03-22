@@ -38,4 +38,5 @@ struct result {
 struct packet initialize_packet(int);
 void print_results(struct result);
 void find_hops(struct result*);
+void find_dest(struct result*);
 #endif
