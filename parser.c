@@ -50,7 +50,6 @@ int process_file(pcap_t *handle, struct result *res){
   int start = 0; /* Indicate when traceroute started */
 
   while ((packet = pcap_next(handle, &header))){
-    /* printf("Processing packet %d...\n", ++pktcounter); */
     struct packet pkt = initialize_packet(++pktcounter);
     if (process_packet(&pkt, packet, header.ts, header.caplen)) {
       if (start) {
@@ -60,7 +59,6 @@ int process_file(pcap_t *handle, struct result *res){
           start = 1;
           res->pkts[res->pkt_c++] = pkt; /* Store the packet internally */
           strcpy(res->ip_src, pkt.ip_src);
-          strcpy(res->ip_dst, pkt.ip_dst);
         }
       }
     }
@@ -107,7 +105,6 @@ int process_packet(struct packet* pkt,
 
   /* UDP packet */
   if (ip->ip_p == IPPROTO_UDP) {
-    /* printf("Protocol: UDP\n\n"); */
     packet += iphdrlen;
     caplen -= iphdrlen;
 
@@ -123,12 +120,10 @@ int process_packet(struct packet* pkt,
     }
     pkt->t_udp = 1;
   } else if (ip->ip_p == IPPROTO_TCP) {
-    /* printf("Protocol: TCP\n\n"); */
     return 0;
   } else if (ip->ip_p == IPPROTO_ICMP) {
     pkt->t_icmp = 1;
   } else {
-    /* printf("Protocol: %d\n\n", ip->ip_p); */
     return 0;
   }
   return 1;
