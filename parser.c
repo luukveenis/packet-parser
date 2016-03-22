@@ -1,7 +1,7 @@
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
 #include <netinet/udp.h>
-#include <linux/icmp.h>
+#include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
 #include <pcap.h>
 #include <stdio.h>
@@ -73,7 +73,7 @@ int process_packet(struct packet* pkt,
   unsigned int iphdrlen;
   struct ip *ip;
   struct udphdr* udp;
-  struct icmphdr* icmp;
+  struct icmp* icmp;
 
   /* Didn't capture the full ethernet header */
   if (caplen < sizeof(struct ether_header)) {
@@ -131,15 +131,15 @@ int process_packet(struct packet* pkt,
   } else if (ip->ip_p == IPPROTO_TCP) {
     return 0;
   } else if (ip->ip_p == IPPROTO_ICMP) {
-    if (caplen < sizeof(struct icmphdr)) {
+    if (caplen < sizeof(struct icmp)) {
       printf("Failed to capture full ICMP header\n");
       return 0;
     }
 
-    icmp = (struct icmphdr*)packet;
+    icmp = (struct icmp*)packet;
     pkt->t_icmp = 1;
-    pkt->icmp_type = icmp->type;
-    pkt->icmp_code = icmp->code;
+    pkt->icmp_type = icmp->icmp_type;
+    pkt->icmp_code = icmp->icmp_code;
 
     packet += 8; /* ICMP header is 8 bytes */
     caplen -= 8;
