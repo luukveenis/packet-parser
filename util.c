@@ -6,6 +6,7 @@
 
 int find_match(struct result*, struct packet);
 int new_node(struct result*, char *ip);
+int update_protocols(struct result*, struct protocol);
 
 struct packet initialize_packet(int id) {
   struct packet pkt;
@@ -32,6 +33,21 @@ void find_dest(struct result *res) {
     if (tmp.t_icmp && (tmp.icmp_type == 0 || tmp.icmp_type == 11)) {
       strcpy(res->ip_dst, tmp.ip_src);
     }
+  }
+}
+
+void find_protocols(struct result *res) {
+  int i;
+  struct packet tmp;
+
+  for (i = 0; i < res->pkt_c; i++) {
+    tmp = res->pkts[i];
+    if (tmp.t_icmp)
+      update_protocols(res, (struct protocol){ 1, "ICMP" });
+    else if (tmp.t_udp)
+      update_protocols(res, (struct protocol){ 17, "UDP" });
+    else
+      update_protocols(res, (struct protocol) { tmp.ip_p, "UNKNOWN PROTOCOL" });
   }
 }
 
@@ -87,10 +103,24 @@ int find_match(struct result *res, struct packet response) {
   return -1;
 }
 
+int update_protocols(struct result *res, struct protocol prot) {
+  int i;
+  struct protocol tmp;
+
+  for (i = 0; i < res->prot_c; i++) {
+    tmp = res->protocols[i];
+    if (tmp.id == prot.id)
+      return 0;
+  }
+  res->protocols[res->prot_c++] = prot;
+  return 1;
+}
+
 void print_results(struct result res) {
   int i;
   struct packet p;
   struct node n;
+  struct protocol prot;
 
   printf("Source node: %s\n", res.ip_src);
   printf("Ultimate destination node: %s\n\n", res.ip_dst);
@@ -118,6 +148,12 @@ void print_results(struct result res) {
   for (i = 0; i < res.hops_c; i++) {
     n = res.hops[i];
     printf("\trouter %d:\t%s\n", n.dist, n.ip);
+  }
+  printf("\n");
+  printf("The values in the protocol field of IP headers:\n");
+  for (i = 0; i < res.prot_c; i++) {
+    prot = res.protocols[i];
+    printf("\t%d:\t%s\n", prot.id, prot.name);
   }
   printf("\n");
 }

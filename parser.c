@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
   process_file(handle, &res);
   find_dest(&res);
   find_hops(&res);
+  find_protocols(&res);
   print_results(res);
 
   return 0;
@@ -107,6 +108,7 @@ int process_packet(struct packet* pkt,
   strcpy(pkt->ip_dst, inet_ntoa(ip->ip_dst));
   pkt->ttl = ip->ip_ttl;
   pkt->ip_id = ntohs(ip->ip_id);
+  pkt->ip_p = ip->ip_p;
 
   packet += iphdrlen;
   caplen -= iphdrlen;

@@ -7,6 +7,11 @@
 
 #include <sys/types.h>
 
+struct protocol {
+  int id;
+  char *name;
+};
+
 struct packet {
   int id; /* This is the original packet # in the trace file for debugging */
   u_short ip_id;
@@ -18,6 +23,7 @@ struct packet {
   u_int8_t ttl;
   u_int8_t icmp_type;
   u_int8_t icmp_code;
+  u_short ip_p;
 };
 
 struct node {
@@ -32,6 +38,8 @@ struct result {
   int pkt_c; /* Packet count (how many packets  we have) */
   struct node hops[MAX_HOPS];
   int hops_c;         /* number of intermediate hosts */
+  struct protocol protocols[MAX_HOPS];
+  int prot_c;
 };
 
 
@@ -39,4 +47,5 @@ struct packet initialize_packet(int);
 void print_results(struct result);
 void find_hops(struct result*);
 void find_dest(struct result*);
+void find_protocols(struct result*);
 #endif
