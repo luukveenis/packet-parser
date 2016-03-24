@@ -20,6 +20,9 @@ struct packet {
   char ip_dst[MAX_STR_LEN]; /* destination IP */
   u_int8_t t_udp:1;
   u_int8_t t_icmp:1;
+  u_int8_t mf:1;
+  u_int8_t df:1;
+  u_short offset;
   u_int8_t ttl;
   u_int8_t icmp_type;
   u_int8_t icmp_code;
@@ -31,6 +34,12 @@ struct node {
   int dist; /* Number of hops from source */
 };
 
+struct fragment {
+  u_short id;
+  int count;
+  u_short offset;
+};
+
 struct result {
   char ip_src[MAX_STR_LEN];
   char ip_dst[MAX_STR_LEN]; /* destination ip */
@@ -40,6 +49,8 @@ struct result {
   int hops_c;         /* number of intermediate hosts */
   struct protocol protocols[MAX_HOPS];
   int prot_c;
+  struct fragment fragments[MAX_PACKETS];
+  int frag_c;
 };
 
 
@@ -48,4 +59,5 @@ void print_results(struct result);
 void find_hops(struct result*);
 void find_dest(struct result*);
 void find_protocols(struct result*);
+void find_fragments(struct result*);
 #endif

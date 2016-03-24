@@ -34,9 +34,11 @@ int main(int argc, char **argv) {
   }
 
   process_file(handle, &res);
+
   find_dest(&res);
   find_hops(&res);
   find_protocols(&res);
+  find_fragments(&res);
   print_results(res);
 
   return 0;
@@ -109,6 +111,12 @@ int process_packet(struct packet* pkt,
   pkt->ttl = ip->ip_ttl;
   pkt->ip_id = ntohs(ip->ip_id);
   pkt->ip_p = ip->ip_p;
+
+  /* Get flags and offset */
+  u_short off = ntohs(ip->ip_off);
+  pkt->mf = (off & IP_MF) ? 1 : 0;
+  pkt->df = (off & IP_DF) ? 1 : 0;
+  pkt->offset = (off & IP_OFFMASK) * 8;
 
   packet += iphdrlen;
   caplen -= iphdrlen;

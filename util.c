@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "util.h"
 
@@ -73,6 +74,41 @@ void find_hops(struct result *res) {
   }
 }
 
+
+void find_fragments(struct result *res) {
+  int i, j, fragcount, offset;
+  struct packet pkt, tmp;
+
+  /* Scan through packets for those with MF flag set */
+  for (i = 0; i < res->pkt_c; i++) {
+    pkt = res->pkts[i];
+    /* The first of a set of fragments must have offset == 0
+     * Otherwise the second may be recognized as a new fragment */
+    if (pkt.mf && pkt.offset == 0 && !strcmp(pkt.ip_src, res->ip_src)) {
+      fragcount = 1, offset = 0;
+      /* Scan through the rest of the packets for the remaining fragments */
+      for (j = i+1; j < res->pkt_c; j++) {
+        tmp = res->pkts[j];
+        /* Check the ID and the source IP */
+        if (tmp.ip_id == pkt.ip_id && !strcmp(tmp.ip_src, pkt.ip_src)) {
+          fragcount++;
+          offset = tmp.offset;
+          /* Stop when we've found the last one */
+          if (!tmp.mf) break;
+        }
+      }
+      /* Report an error if we can't locate the remaining fragments */
+      if (offset == 0 || fragcount == 1) {
+        printf("Error finding remaining fragments for packet %d\n", pkt.id);
+      } else {
+        /* Store the computed data in a struct to display in the results */
+        struct fragment frag = { .id = pkt.ip_id, .count = fragcount, .offset = offset };
+        res->fragments[res->frag_c++] = frag;
+      }
+    }
+  }
+}
+
 /* Returns 0 if we've already stored this node, 1 otherwise.
  * This is just so we only store unique intermediate hops    */
 int new_node(struct result *res, char *ip) {
@@ -121,6 +157,7 @@ void print_results(struct result res) {
   struct packet p;
   struct node n;
   struct protocol prot;
+  struct fragment frag;
 
   printf("Source node: %s\n", res.ip_src);
   printf("Ultimate destination node: %s\n\n", res.ip_dst);
@@ -154,6 +191,13 @@ void print_results(struct result res) {
   for (i = 0; i < res.prot_c; i++) {
     prot = res.protocols[i];
     printf("\t%d:\t%s\n", prot.id, prot.name);
+  }
+  printf("\n");
+  for (i = 0; i < res.frag_c; i++) {
+    frag = res.fragments[i];
+    printf("The number of fragments created from the original data gram ");
+    printf("with IP id = %d is: %d\n", frag.id, frag.count);
+    printf("The offset of the last fragment is: %d\n\n", frag.offset);
   }
   printf("\n");
 }
