@@ -31,8 +31,9 @@ void find_dest(struct result *res) {
     /* There are two options for the message type of the final response:
      *  - 0 (ping reply) if the request is using ICMP
      *  - 11 (port unreachable) if the request is using UDP */
-    if (tmp.t_icmp && (tmp.icmp_type == 0 || tmp.icmp_type == 11)) {
+    if (tmp.t_icmp && (tmp.icmp_type == 0 || tmp.icmp_type == 3)) {
       strcpy(res->ip_dst, tmp.ip_src);
+      break;
     }
   }
 }
