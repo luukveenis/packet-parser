@@ -54,10 +54,11 @@ void find_protocols(struct result *res) {
 }
 
 void find_hops(struct result *res) {
-  int i, match;
+  int i, j, match;
   struct packet tmp, original;
   struct node nod;
 
+  /* Find all the intermediate hops */
   for (i = 0; i < res->pkt_c; i++) {
     tmp = res->pkts[i];
     if (!strcmp(tmp.ip_dst, res->ip_src)) {
@@ -70,6 +71,17 @@ void find_hops(struct result *res) {
           nod.dist = original.ttl;
           res->hops[res->hops_c++] = nod;
         }
+      }
+    }
+  }
+  /* Sort the nodes in order of increasing hop count
+   * Use bubble sort because it's easy and negligible number of items */
+  for (i = 0; i < res->hops_c - 1; i++) {
+    for (j = i+1; j < res->hops_c; j++) {
+      if (res->hops[j].dist < res->hops[i].dist) {
+        nod = res->hops[j];
+        res->hops[j] = res->hops[i];
+        res->hops[i] = nod;
       }
     }
   }
