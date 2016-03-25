@@ -8,6 +8,7 @@
 int find_match(struct result*, struct packet);
 int new_node(struct result*, char *ip);
 int update_protocols(struct result*, struct protocol);
+static int compare_node(const void*, const void*);
 
 struct packet initialize_packet(int id) {
   struct packet pkt;
@@ -54,7 +55,7 @@ void find_protocols(struct result *res) {
 }
 
 void find_hops(struct result *res) {
-  int i, j, match;
+  int i, match;
   struct packet tmp, original;
   struct node nod;
 
@@ -74,17 +75,7 @@ void find_hops(struct result *res) {
       }
     }
   }
-  /* Sort the nodes in order of increasing hop count
-   * Use bubble sort because it's easy and negligible number of items */
-  for (i = 0; i < res->hops_c - 1; i++) {
-    for (j = i+1; j < res->hops_c; j++) {
-      if (res->hops[j].dist < res->hops[i].dist) {
-        nod = res->hops[j];
-        res->hops[j] = res->hops[i];
-        res->hops[i] = nod;
-      }
-    }
-  }
+  qsort(res->hops, res->hops_c, sizeof(struct node), compare_node);
 }
 
 
@@ -120,6 +111,12 @@ void find_fragments(struct result *res) {
       }
     }
   }
+}
+
+int compare_node(const void *a, const void *b) {
+  struct node nod1 = *((struct node*) a);
+  struct node nod2 = *((struct node*) b);
+  return nod1.dist - nod2.dist;
 }
 
 /* Returns 0 if we've already stored this node, 1 otherwise.
