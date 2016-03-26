@@ -27,6 +27,7 @@ struct packet {
   u_int8_t ttl;
   u_int8_t icmp_type;
   u_int8_t icmp_code;
+  u_int16_t seq;
   u_short ip_p;
 };
 

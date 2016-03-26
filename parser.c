@@ -154,6 +154,8 @@ int process_packet(struct packet* pkt,
     pkt->t_icmp = 1;
     pkt->icmp_type = icmp->icmp_type;
     pkt->icmp_code = icmp->icmp_code;
+    if (pkt->icmp_type == 0 || pkt->icmp_type == 8)
+      pkt->seq = ntohs(icmp->icmp_hun.ih_idseq.icd_seq);
 
     packet += 8; /* ICMP header is 8 bytes */
     caplen -= 8;

@@ -125,6 +125,7 @@ void find_rtts(struct result *res) {
     nod = res->hops[i];
     compute_rtt(res, nod.ip);
   }
+  compute_rtt(res, res->ip_dst);
 }
 
 /* Computes the round trip time for all packets whose source IP matches the
@@ -145,7 +146,11 @@ void compute_rtt(struct result *res, char *ip) {
       /* Find all the fragments that match */
       for (j = 0; j < res->pkt_c; j++) {
         tmp = res->pkts[j];
-        if (tmp.ip_id == pkt.src_id) {
+        if (pkt.t_icmp && pkt.icmp_type == 0) {
+          if (tmp.seq == pkt.seq && !strcmp(tmp.ip_dst, pkt.ip_src)) {
+            times[count++] = pkt.time - tmp.time;
+          }
+        } else if (tmp.ip_id == pkt.src_id) {
           times[count++] = pkt.time - tmp.time;
         }
       }
