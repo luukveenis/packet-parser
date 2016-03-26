@@ -64,7 +64,7 @@ void find_hops(struct result *res) {
   /* Find all the intermediate hops */
   for (i = 0; i < res->pkt_c; i++) {
     tmp = res->pkts[i];
-    if (!strcmp(tmp.ip_dst, res->ip_src)) {
+    if (!strcmp(tmp.ip_dst, res->ip_src) && strcmp(tmp.ip_src, res->ip_dst)) {
       match = find_match(res, tmp);
       if (match >= 0) {
         /* Get the packet and create an intermediate node for it */
