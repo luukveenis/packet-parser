@@ -236,25 +236,6 @@ void print_results(struct result res) {
   printf("Source node: %s\n", res.ip_src);
   printf("Ultimate destination node: %s\n\n", res.ip_dst);
 
-  if (DEBUG) {
-    for (i = 0; i < res.pkt_c; i++){
-      p = res.pkts[i];
-      printf("Original id: %d\n", p.id);
-      printf("IP ident: %d\n", p.ip_id);
-      printf("Packet #: %d\n", i);
-      printf("Source IP: %s\n", p.ip_src);
-      printf("Destination IP: %s\n", p.ip_dst);
-      printf("TTL: %d\n", p.ttl);
-      if (p.t_icmp) {
-        printf("ICMP type: %d\n", p.icmp_type);
-        printf("ICMP code: %d\n", p.icmp_code);
-        printf("Src ID: %d\n", p.src_id);
-      }
-      char *type = p.t_udp ? "UDP" : "ICMP";
-      printf("Type of packet: %s\n\n", type);
-    }
-    printf("========================\n\n");
-  }
   printf("The IP addresses of intermediate destination nodes:\n");
   for (i = 0; i < res.hops_c; i++) {
     n = res.hops[i];
