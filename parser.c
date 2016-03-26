@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
   find_hops(&res);
   find_protocols(&res);
   find_fragments(&res);
+  find_rtts(&res);
   print_results(res);
 
   return 0;
@@ -106,6 +107,7 @@ int process_packet(struct packet* pkt,
   }
 
   /* Extract info from IP header */
+  pkt->time = (1000 * ts.tv_sec) + (ts.tv_usec / 1000);
   strcpy(pkt->ip_src, inet_ntoa(ip->ip_src));
   strcpy(pkt->ip_dst, inet_ntoa(ip->ip_dst));
   pkt->ttl = ip->ip_ttl;

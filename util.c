@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,7 @@ int find_match(struct result*, struct packet);
 int new_node(struct result*, char *ip);
 int update_protocols(struct result*, struct protocol);
 static int compare_node(const void*, const void*);
+static void compute_rtt(struct result*, char*);
 
 struct packet initialize_packet(int id) {
   struct packet pkt;
@@ -113,6 +115,62 @@ void find_fragments(struct result *res) {
   }
 }
 
+/* Scans through all the nodes the source communicates with and computes the
+ * RTT values required for the assignment */
+void find_rtts(struct result *res) {
+  int i;
+  struct node nod;
+
+  for (i = 0; i < res->hops_c; i++) {
+    nod = res->hops[i];
+    compute_rtt(res, nod.ip);
+  }
+}
+
+/* Computes the round trip time for all packets whose source IP matches the
+ * source of the traceroute and whose destination matches the provided IP. It
+ * then uses all the results to compute the average and standard deviation */
+void compute_rtt(struct result *res, char *ip) {
+  int i, j, count = 0;
+  long sum = 0;
+  long times[MAX_STR_LEN];
+  double mean, dev;
+  struct packet pkt, tmp;
+  struct rtt rtt;
+
+  /* Look for all the responses, then find the originals */
+  for (i = 0; i < res->pkt_c; i++) {
+    pkt = res->pkts[i];
+    if (!strcmp(pkt.ip_dst, res->ip_src) && !strcmp(pkt.ip_src, ip)) {
+      /* Find all the fragments that match */
+      for (j = 0; j < res->pkt_c; j++) {
+        tmp = res->pkts[j];
+        if (tmp.ip_id == pkt.src_id) {
+          times[count++] = pkt.time - tmp.time;
+        }
+      }
+    }
+  }
+
+  /* Compute the average */
+  for (i = 0; i < count; i++) {
+    sum += times[i];
+  }
+  mean = (1.0 * sum) / count;
+
+  /* Use the average to compute the standard deviation */
+  for (i = 0; i < count; i++) {
+    dev += pow((times[i] - mean), 2);
+  }
+  dev = sqrt(dev / count);
+
+  /* Store the result */
+  strcpy(rtt.ip_dst, ip);
+  rtt.mean = mean;
+  rtt.dev = dev;
+  res->rtts[res->rtt_c++] = rtt;
+}
+
 int compare_node(const void *a, const void *b) {
   struct node nod1 = *((struct node*) a);
   struct node nod2 = *((struct node*) b);
@@ -168,6 +226,7 @@ void print_results(struct result res) {
   struct node n;
   struct protocol prot;
   struct fragment frag;
+  struct rtt rtt;
 
   printf("Source node: %s\n", res.ip_src);
   printf("Ultimate destination node: %s\n\n", res.ip_dst);
@@ -208,6 +267,12 @@ void print_results(struct result res) {
     printf("The number of fragments created from the original data gram ");
     printf("with IP id = %d is: %d\n", frag.id, frag.count);
     printf("The offset of the last fragment is: %d\n\n", frag.offset);
+  }
+  printf("\n");
+  for (i = 0; i < res.rtt_c; i++) {
+    rtt = res.rtts[i];
+    printf("The average RTT between %s and %s ", res.ip_src, rtt.ip_dst);
+    printf("is:\t%.2lf ms, the s.d. is: %.2lf ms\n", rtt.mean, rtt.dev);
   }
   printf("\n");
 }
