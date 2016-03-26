@@ -227,16 +227,15 @@ int update_protocols(struct result *res, struct protocol prot) {
 
 void print_results(struct result res) {
   int i;
-  struct packet p;
   struct node n;
   struct protocol prot;
   struct fragment frag;
   struct rtt rtt;
 
-  printf("Source node: %s\n", res.ip_src);
-  printf("Ultimate destination node: %s\n\n", res.ip_dst);
+  printf("The IP address of the source node: %s\n", res.ip_src);
+  printf("The IP address of the ultimate destination node: %s\n\n", res.ip_dst);
 
-  printf("The IP addresses of intermediate destination nodes:\n");
+  printf("The IP addresses of the intermediate destination nodes:\n");
   for (i = 0; i < res.hops_c; i++) {
     n = res.hops[i];
     printf("\trouter %d:\t%s\n", n.dist, n.ip);
